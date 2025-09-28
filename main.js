@@ -1,11 +1,11 @@
 /**
- * CourseMate - AI-Powered Course Recommendation System
+ * CourseScout - AI-Powered Course Recommendation System
  * Frontend JavaScript Application
  * 
  * Author: Ajay Mathuriya
  * Institution: Minor in AI from IIT Ropar (iitrprai_24081389)
  * 
- * This file contains the complete frontend logic for the CourseMate application,
+ * This file contains the complete frontend logic for the CourseScout application,
  * including user interface interactions, API calls, and data management.
  */
 
@@ -101,7 +101,7 @@ function initializeApp() {
 // USER PROFILE MANAGEMENT
 // ===========================================
 function loadUserProfile() {
-    const saved = localStorage.getItem('CourseMateProfile');
+    const saved = localStorage.getItem('CourseScoutProfile');
     if (saved) {
         userProfile = { ...userProfile, ...JSON.parse(saved) };
     }
@@ -110,7 +110,7 @@ function loadUserProfile() {
 
 function saveUserProfile() {
     userProfile.timestamp = new Date();
-    localStorage.setItem('CourseMateProfile', JSON.stringify(userProfile));
+    localStorage.setItem('CourseScoutProfile', JSON.stringify(userProfile));
 }
 
 async function detectUserLocation() {
@@ -1404,7 +1404,7 @@ function setupEventListeners() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
             
             // Show toast
-            showToast('Welcome back to MoviesMate! 🎬', 'success');
+            showToast('Welcome back to CourseScout! 🎓', 'success');
             
             // Optional: Refresh trending movies
             loadInitialData();

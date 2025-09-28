@@ -1,9 +1,9 @@
-# CourseMate 🎓 - AI-Powered Course Recommendation System
+# CourseScout 🎓 - AI-Powered Course Recommendation System
 
 **Author**: Ajay Mathuriya  
 **Institution**: Minor in AI from IIT Ropar (iitrprai_24081389)
 
-CourseMate is an intelligent course recommendation system that helps students find the perfect online courses based on their interests, learning goals, and preferences. Built with the same elegant architecture as MoviesMate, but focused on course discovery and recommendations.
+CourseScout is an intelligent course recommendation system that helps students find the perfect online courses based on their interests, learning goals, and preferences. Built with the same elegant architecture, adapted specifically for course discovery and recommendations.
 
 ## 🌟 Features
 

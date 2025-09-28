@@ -76,7 +76,7 @@ Data processing:
 - Update the `input_file` path in the script to point at your local dataset before running.
 
 Notes on legacy code:
-- `app.py` contains an older MoviesMate (TMDB) API. The active CourseMate backend is `main.py`. Prefer `main.py` for all development.
+- `app.py` contains an older MoviesMate (TMDB) API. The active CourseScout backend is `main.py`. Prefer `main.py` for all development.
 
 ## Important references from README.md
 - Quick start includes cloning, dependency install, creating `config.env`, and running `python main.py`.
@@ -84,7 +84,7 @@ Notes on legacy code:
 - Current state: local course data and embeddings are already present in the repo; static files are served directly by `main.py`.
 
 ## Key files
-- `main.py` – FastAPI backend (CourseMate).
+- `main.py` – FastAPI backend (CourseScout).
 - `config.py` / `config.env` – configuration loading & validation.
 - `index.html`, `main.js`, `style.css`, `tailwind-config.js`, `config.js`, `assets/` – frontend.
 - `process_data.py`, `courses_data.csv` (and optional `courses_data.feather`, `course_embeddings_float16.npy`) – data pipeline outputs.

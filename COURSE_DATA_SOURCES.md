@@ -1,4 +1,4 @@
-# Course Data Sources for CourseMate
+# Course Data Sources for CourseScout
 
 ## Recommended APIs and Data Sources
 

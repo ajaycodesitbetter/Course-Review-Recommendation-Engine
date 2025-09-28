@@ -107,7 +107,7 @@ class CourseOut(BaseModel):
 # ===========================================
 # GLOBAL VARIABLES
 # ===========================================
-app = FastAPI(title="CourseMate API", description="AI-Powered Course Recommendation System")
+app = FastAPI(title="CourseScout API", description="AI-Powered Course Recommendation System")
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="."), name="static")
@@ -179,7 +179,7 @@ async def startup_event():
         # Initialize course data
         await initialize_course_data()
         
-        logger.info("CourseMate API started successfully")
+        logger.info("CourseScout API started successfully")
     except Exception as e:
         logger.error(f"Startup error: {e}")
 
@@ -189,7 +189,7 @@ async def shutdown_event():
     global session_pool
     if session_pool:
         await session_pool.close()
-    logger.info("CourseMate API shutdown completed")
+    logger.info("CourseScout API shutdown completed")
 
 # ===========================================
 # CORE FUNCTIONS
@@ -404,7 +404,7 @@ async def read_root():
 async def api_status():
     """API status endpoint"""
     return {
-        "message": "CourseMate API is running!",
+        "message": "CourseScout API is running!",
         "status": "healthy",
         "created_by": "Ajay Mathuriya, IIT Ropar"
     }

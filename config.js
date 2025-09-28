@@ -1,5 +1,5 @@
 /**
- * CourseMate - AI-Powered Course Recommendation System
+ * CourseScout - AI-Powered Course Recommendation System
  * Configuration Management
  * 
  * Author: Ajay Mathuriya
