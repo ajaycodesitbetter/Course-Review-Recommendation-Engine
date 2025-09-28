@@ -198,30 +198,64 @@ async def shutdown_event():
 async def initialize_course_data():
     """Initialize course data and embeddings"""
     global courses_df, course_embeddings, tfidf_vectorizer
-    
-    # Load processed course data
+
     try:
-        if os.path.exists("courses_data.feather"):
-            courses_df = pd.read_feather("courses_data.feather")
-            logger.info(f"Loaded {len(courses_df)} courses from feather file")
-        elif os.path.exists("courses_data.csv"):
-            courses_df = pd.read_csv("courses_data.csv")
-            logger.info(f"Loaded {len(courses_df)} courses from CSV file")
-        else:
-            logger.error("No course data file found! Please run process_data.py first.")
+        # Determine dataset file from config or fallbacks
+        data_file = getattr(config, 'COURSES_DATA_FILE', None)
+        loaded = False
+
+        if data_file and isinstance(data_file, str):
+            try:
+                if os.path.isabs(data_file) and os.path.exists(data_file):
+                    if data_file.lower().endswith('.feather'):
+                        courses_df = pd.read_feather(data_file)
+                    elif data_file.lower().endswith('.csv'):
+                        courses_df = pd.read_csv(data_file)
+                    else:
+                        logger.warning(f"Unsupported data file extension for {data_file}. Expected .feather or .csv")
+                        courses_df = None
+                    if courses_df is not None:
+                        logger.info(f"Loaded {len(courses_df)} courses from configured file: {data_file}")
+                        loaded = True
+                else:
+                    logger.info(f"Configured COURSES_DATA_FILE not found or not absolute: {data_file}. Falling back to defaults.")
+            except Exception as e:
+                logger.warning(f"Failed loading configured COURSES_DATA_FILE ({data_file}): {e}. Falling back to defaults.")
+
+        if not loaded:
+            if os.path.exists("courses_data.feather"):
+                courses_df = pd.read_feather("courses_data.feather")
+                logger.info(f"Loaded {len(courses_df)} courses from courses_data.feather")
+                loaded = True
+            elif os.path.exists("courses_data.csv"):
+                courses_df = pd.read_csv("courses_data.csv")
+                logger.info(f"Loaded {len(courses_df)} courses from courses_data.csv")
+                loaded = True
+
+        if not loaded:
+            logger.error("No course data file found. Set COURSES_DATA_FILE in config.env to an absolute path (e.g., C:\\Users\\<you>\\...\\courses_data.feather) or place courses_data.feather/csv in the repo root.")
             return
-        
+
         # Load embeddings for similarity search
-        if os.path.exists("course_embeddings_float16.npy"):
-            course_embeddings = np.load("course_embeddings_float16.npy")
-            logger.info(f"Loaded course embeddings with shape: {course_embeddings.shape}")
-        else:
-            logger.warning("No embeddings file found. Recommendations may be limited.")
-        
+        emb_file = getattr(config, 'EMBEDDINGS_FILE', 'course_embeddings_float16.npy')
+        try:
+            if os.path.isabs(emb_file) and os.path.exists(emb_file):
+                course_embeddings = np.load(emb_file)
+                logger.info(f"Loaded embeddings from configured file: {emb_file} with shape {course_embeddings.shape}")
+            elif os.path.exists('course_embeddings_float16.npy'):
+                course_embeddings = np.load('course_embeddings_float16.npy')
+                logger.info(f"Loaded embeddings from course_embeddings_float16.npy with shape {course_embeddings.shape}")
+            else:
+                course_embeddings = None
+                logger.warning("No embeddings file found. Similarity-based recommendations will fall back to category-based.")
+        except Exception as e:
+            course_embeddings = None
+            logger.warning(f"Failed to load embeddings: {e}. Continuing without embeddings.")
+
         # Prepare text search columns
         if 'title_clean' not in courses_df.columns:
-            courses_df['title_clean'] = courses_df['title'].str.lower().str.strip()
-        
+            courses_df['title_clean'] = courses_df['title'].astype(str).str.lower().str.strip()
+
     except Exception as e:
         logger.error(f"Failed to load course data: {e}")
         courses_df = pd.DataFrame()

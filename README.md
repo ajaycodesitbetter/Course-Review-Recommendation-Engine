@@ -88,6 +88,21 @@ For detailed API information, see [COURSE_DATA_SOURCES.md](COURSE_DATA_SOURCES.m
 
 ## 🛠️ Development
 
+### Data setup
+You have two options to make the backend endpoints work locally (search/trending/top-rated/recommendations):
+
+- Option A (simple): place a processed dataset in the repo root as either:
+  - `courses_data.feather` (preferred for speed), or
+  - `courses_data.csv`
+
+- Option B (no copy): set an absolute path in `config.env`:
+```
+COURSES_DATA_FILE=C:\Users\AjayM.AJAYS_DEVICE\OneDrive\Desktop\dataest\courses_data.feather
+# Optional, if embeddings are stored elsewhere:
+EMBEDDINGS_FILE=C:\Users\AjayM.AJAYS_DEVICE\OneDrive\Desktop\dataest\course_embeddings_float16.npy
+```
+The server will load the configured files if present, otherwise it falls back to looking in the repository root.
+
 ### API Endpoints
 - `GET /` - Serve frontend
 - `GET /api` - API status
