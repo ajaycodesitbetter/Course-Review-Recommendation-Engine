@@ -24,7 +24,8 @@ class Config {
         this.FALLBACK_POSTER_URL = this.getEnvVar('FALLBACK_POSTER_URL', 'https://dummyimage.com/480x270/1f2937/9ca3af&text=No+Image');
         this.COURSE_LINK_BASE = this.getEnvVar('COURSE_LINK_BASE', 'https://www.udemy.com');
         
-        this.BACKEND_BASE_URL = this.getEnvVar('BACKEND_BASE_URL', 'http://127.0.0.1:8000');
+        // Default to deployed Render backend; can be overridden via env var
+        this.BACKEND_BASE_URL = this.getEnvVar('BACKEND_BASE_URL', 'https://course-review-recommendation-engine.onrender.com');
         this.API_TIMEOUT_SEC = parseInt(this.getEnvVar('API_TIMEOUT_SEC', '20'));
         this.API_MAX_RETRIES = parseInt(this.getEnvVar('API_MAX_RETRIES', '3'));
         
