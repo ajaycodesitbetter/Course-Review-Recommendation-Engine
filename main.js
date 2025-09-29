@@ -621,14 +621,15 @@ function createCourseCard(course, showTrendingNumber = false, trendingIndex = 0)
     
     // Get category/topic
     const category = course.primary_category?.name || course.topic?.name || course.primary_subcategory?.name || '';
+    const fallbackQuery = encodeURIComponent(category || course.title || 'education course');
     
     return `
         <div class="movie-card bg-gray-800/30 rounded-2xl p-4 hover:bg-gray-800/50 transition-all group relative flex flex-col h-full">
-            ${showTrendingNumber ? `<div class="trending-number">${trendingIndex + 1}</div>` : ''}
+            ${showTrendingNumber ? `<div class=\"trending-number\">${trendingIndex + 1}</div>` : ''}
             <div class="poster-container aspect-[16/9] w-full rounded-xl overflow-hidden mb-4 relative">
-                ${course.is_paid === false ? `<div class="free-badge">FREE</div>` : ''}
+                ${course.is_paid === false ? `<div class=\"free-badge\">FREE</div>` : ''}
                 <img src="${getSafeImageSrc(course)}" alt="${course.title}" ${shouldEagerLoad ? 'loading="eager"' : 'loading="lazy"'} 
-                     onerror="this.onerror=null;this.src='https://dummyimage.com/480x270/1f2937/9ca3af&text=No+Image';" 
+                     onerror="this.onerror=null;this.src='https://source.unsplash.com/480x270/?${fallbackQuery}';" 
                      data-course-id="${course.id}"
                      class="w-full h-full object-cover rounded-xl transition-transform group-hover:scale-110" />
                 <button class="poster-details-btn" onclick="showCourseDetail(${course.id})">
@@ -646,9 +647,9 @@ function createCourseCard(course, showTrendingNumber = false, trendingIndex = 0)
                     ${course.num_subscribers ? (course.num_subscribers > 1000 ? (course.num_subscribers/1000).toFixed(1) + 'K' : course.num_subscribers) : '0'}
                 </span>
             </div>
-            ${instructorNames ? `<p class="text-xs text-gray-400 mb-3">By ${instructorNames}</p>` : ''}
-            ${category ? `<div class="mb-3">
-                <span class="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded-full">${category}</span>
+            ${instructorNames ? `<p class=\"text-xs text-gray-400 mb-3\">By ${instructorNames}</p>` : ''}
+            ${category ? `<div class=\"mb-3\">
+                <span class=\"px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded-full\">${category}</span>
             </div>` : ''}
             <div class="space-y-2 mt-auto">
                 <div class="flex items-center justify-between mb-2">
@@ -659,7 +660,7 @@ function createCourseCard(course, showTrendingNumber = false, trendingIndex = 0)
                         ${course.instructional_level || course.level || 'All levels'}
                     </span>
                 </div>
-                <button data-course-id="${course.id}" onclick="toggleWatchlist(${JSON.stringify(course).replace(/"/g, '&quot;')})" 
+                <button data-course-id="${course.id}" onclick="toggleWatchlist(${JSON.stringify(course).replace(/\"/g, '&quot;')})" 
                         class="watchlist-btn w-full py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center ${
                             isInWatchlist 
                                 ? 'bg-green-600 hover:bg-green-700 text-white' 
@@ -716,8 +717,8 @@ async function showCourseDetail(courseId) {
             </div>
             <div class="grid md:grid-cols-4 gap-6">
                 <div class="md:col-span-1">
-                    ${course.is_paid === false ? `<div class="free-badge">FREE</div>` : ''}
-                    <img src="${getSafeImageSrc(course)}" alt="${course.title}" class="w-full rounded-xl shadow-lg mb-4">
+                    ${course.is_paid === false ? `<div class=\"free-badge\">FREE</div>` : ''}
+                    <img src="${getSafeImageSrc(course)}" alt="${course.title}" class="w-full rounded-xl shadow-lg mb-4" onerror="this.onerror=null;this.src='https://source.unsplash.com/480x270/?${encodeURIComponent((category || course.title || 'education course'))}'">
                     ${course.url ? `
                         <a href="${course.url}" target="_blank" class="w-full bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-white flex items-center justify-center transition-colors mb-3">
                             <i data-lucide="external-link" class="w-4 h-4 mr-2"></i>
@@ -1073,7 +1074,7 @@ function updateWatchlistModal() {
         content.innerHTML = watchlist.map(course => `
             <div class="bg-gray-800/30 rounded-2xl p-4">
                 <img src="${getSafeImageSrc(course)}" alt="${course.title}" 
-                        class="w-full object-cover rounded-xl mb-3 cursor-pointer" onclick="showCourseDetail(${course.id})">
+                        class="w-full object-cover rounded-xl mb-3 cursor-pointer" onclick="showCourseDetail(${course.id})" onerror="this.onerror=null;this.src='https://source.unsplash.com/480x270/?${encodeURIComponent((course.primary_category?.name || course.title || 'education course'))}'">
                 <h3 class="font-semibold text-sm mb-2 line-clamp-1">${course.title}</h3>
                 <button onclick="toggleWatchlist(${JSON.stringify(course).replace(/\"/g, '&quot;')})" 
                         class="w-full bg-red-600 hover:bg-red-700 py-2 rounded-lg text-sm flex items-center justify-center transition-colors">
@@ -1241,7 +1242,7 @@ function displaySuggestions(suggestions) {
 
     content.innerHTML = suggestions.map((course, index) => `
         <div class="search-suggestion-item" data-index="${index}" onclick="selectSuggestion(${index})">
-            <img src="${getSafeImageSrc(course)}" alt="${course.title}" class="suggestion-poster" loading="lazy">
+            <img src="${getSafeImageSrc(course)}" alt="${course.title}" class="suggestion-poster" loading="lazy" onerror="this.onerror=null;this.src='https://source.unsplash.com/480x270/?${encodeURIComponent((course.primary_category?.name || course.title || 'education course'))}'">
             <div class="suggestion-info">
                 <div class="suggestion-title">${course.title}</div>
                 <div class="suggestion-meta">
