@@ -494,6 +494,33 @@ async function getRecommendations(movieId) {
 // ===========================================
 // UTILITY FUNCTIONS
 // ===========================================
+
+// Generic JSON fetch with retry and exponential backoff (helps with Render cold starts)
+async function fetchJSONWithRetry(url, options = {}, retries = 2, backoffMs = 800) {
+    let attempt = 0;
+    let lastErr = null;
+    while (attempt <= retries) {
+        try {
+            const res = await fetch(url, { cache: 'no-store', ...options });
+            if (res.ok) {
+                return await res.json();
+            }
+            // Retry on typical cold-start/temporary errors
+            if ([502, 503, 504, 524].includes(res.status)) {
+                throw new Error(`Temporary server error ${res.status}`);
+            }
+            // Non-retryable
+            throw new Error(`HTTP ${res.status}`);
+        } catch (err) {
+            lastErr = err;
+            if (attempt === retries) break;
+            await new Promise(r => setTimeout(r, backoffMs * Math.pow(2, attempt)));
+            attempt += 1;
+        }
+    }
+    throw lastErr;
+}
+
 function getCourseImageUrl(course) {
     if (!course || typeof course !== 'object') return FALLBACK_POSTER_URL;
     
@@ -930,11 +957,11 @@ function showTrailerModal(embedUrl) {
 // ===========================================
 // WATCHLIST FUNCTIONS
 // ===========================================
-function toggleWatchlist(movie) {
-    const index = watchlist.findIndex(item => item.id === movie.id);
+function toggleWatchlist(course) {
+    const index = watchlist.findIndex(item => item.id === course.id);
     let message = '';
     if (index === -1) {
-        watchlist.push(movie);
+        watchlist.push(course);
         message = 'Added to Watchlist!';
     } else {
         watchlist.splice(index, 1);
@@ -945,7 +972,7 @@ function toggleWatchlist(movie) {
     saveUserProfile();
     updateWatchlistCount();
     updateWatchlistModal();
-    updateWatchlistButton(movie);
+    updateWatchlistButton(course);
     showToast(message, 'success');
     
     // Refresh recommendations after watchlist change
@@ -1306,17 +1333,9 @@ async function searchCourses(query) {
         if (cached && (Date.now() - cached.time) < CACHE_TTL_MS) {
             results = cached.results;
         } else {
-            const response = await fetch(`${config.BACKEND_BASE_URL}/search?${params.toString()}`, {
-                signal: searchController.signal,
-                cache: 'no-store'
-            });
-            
-            if (response.ok) {
-                results = await response.json();
-                searchResultCache.set(cacheKey, { results, time: Date.now() });
-            } else {
-                throw new Error(`Search failed with status ${response.status}`);
-            }
+            const controller = searchController;
+            results = await fetchJSONWithRetry(`${config.BACKEND_BASE_URL}/search?${params.toString()}`, { signal: controller.signal }, 2, 600);
+            searchResultCache.set(cacheKey, { results, time: Date.now() });
         }
 
         const searchSection = document.getElementById('search-results');
@@ -1339,19 +1358,10 @@ async function searchCourses(query) {
                 recParams.set('course_id', results[0].id);
                 recParams.set('limit', '10');
                 
-                const recResponse = await fetch(`${config.BACKEND_BASE_URL}/recommendations?${recParams.toString()}`, {
-                    signal: recsController.signal,
-                    cache: 'no-store'
-                });
-                
-                if (recResponse.ok) {
-                    const recommendations = await recResponse.json();
-                    if (recommendations.length > 0) {
-                        recommendationsSection.classList.remove('hidden');
-                        await displayCourses(recommendations, 'recommendation-movies');
-                    } else {
-                        recommendationsSection.classList.add('hidden');
-                    }
+                const recs = await fetchJSONWithRetry(`${config.BACKEND_BASE_URL}/recommendations?${recParams.toString()}`, { signal: recsController.signal }, 1, 800);
+                if (Array.isArray(recs) && recs.length > 0) {
+                    recommendationsSection.classList.remove('hidden');
+                    await displayCourses(recs, 'recommendation-movies');
                 } else {
                     recommendationsSection.classList.add('hidden');
                 }
@@ -1378,22 +1388,23 @@ const searchMovies = searchCourses;
 
 async function loadInitialData() {
     try {
-        const trendingPromise = fetch(`${config.BACKEND_BASE_URL}/trending?limit=12`);
-        const topRatedPromise = fetch(`${config.BACKEND_BASE_URL}/top-rated?limit=12`);
+        // Small delay to allow Render to wake up on first visit
+        const warmup = fetchJSONWithRetry(`${config.BACKEND_BASE_URL}/trending?limit=1`, {}, 1, 600);
+        await Promise.race([warmup, new Promise(r => setTimeout(r, 700))]);
 
-        const [trendingResponse, topRatedResponse] = await Promise.all([trendingPromise, topRatedPromise]);
-        
-        const trending = await trendingResponse.json();
-        const topRated = await topRatedResponse.json();
+        const [trending, topRated] = await Promise.all([
+            fetchJSONWithRetry(`${config.BACKEND_BASE_URL}/trending?limit=12`, {}, 2, 800),
+            fetchJSONWithRetry(`${config.BACKEND_BASE_URL}/top-rated?limit=12`, {}, 2, 800),
+        ]);
 
-        displayCourses(trending, 'trending-movies', true);
-        displayCourses(topRated, 'toprated-movies');
+        displayCourses(trending || [], 'trending-movies', true);
+        displayCourses(topRated || [], 'toprated-movies');
 
         // Load personalized recommendations (non-blocking)
         loadPersonalizedRecommendations();
     } catch (error) {
         console.error('Error loading initial data:', error);
-        showToast('Failed to load courses. Please refresh the page.', 'error');
+        showToast('CourseScout backend is waking up. Please wait a moment and try again.', 'warning');
     }
 }
 
@@ -1407,20 +1418,11 @@ async function fetchPersonalizedRecommendations() {
             mood: userProfile.mood || 'happy'
         };
 
-        const response = await fetch(`${config.BACKEND_BASE_URL}/recommendations/user`, {
+        return await fetchJSONWithRetry(`${config.BACKEND_BASE_URL}/recommendations/user`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload),
-        });
-
-        if (response.ok) {
-            return await response.json();
-        } else {
-            console.warn('Personalized recommendations failed:', response.status);
-            return [];
-        }
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        }, 1, 800);
     } catch (error) {
         console.error('Error fetching personalized recommendations:', error);
         return [];
