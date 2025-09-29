@@ -206,7 +206,8 @@ async def initialize_course_data():
 
         if data_file and isinstance(data_file, str):
             try:
-                if os.path.isabs(data_file) and os.path.exists(data_file):
+                # Try configured file (both absolute and relative paths)
+                if os.path.exists(data_file):
                     if data_file.lower().endswith('.feather'):
                         courses_df = pd.read_feather(data_file)
                     elif data_file.lower().endswith('.csv'):
@@ -218,7 +219,7 @@ async def initialize_course_data():
                         logger.info(f"Loaded {len(courses_df)} courses from configured file: {data_file}")
                         loaded = True
                 else:
-                    logger.info(f"Configured COURSES_DATA_FILE not found or not absolute: {data_file}. Falling back to defaults.")
+                    logger.info(f"Configured COURSES_DATA_FILE not found: {data_file}. Falling back to defaults.")
             except Exception as e:
                 logger.warning(f"Failed loading configured COURSES_DATA_FILE ({data_file}): {e}. Falling back to defaults.")
 
@@ -239,7 +240,8 @@ async def initialize_course_data():
         # Load embeddings for similarity search
         emb_file = getattr(config, 'EMBEDDINGS_FILE', 'course_embeddings_float16.npy')
         try:
-            if os.path.isabs(emb_file) and os.path.exists(emb_file):
+            # Try configured embeddings file first (both absolute and relative paths)
+            if os.path.exists(emb_file):
                 course_embeddings = np.load(emb_file)
                 logger.info(f"Loaded embeddings from configured file: {emb_file} with shape {course_embeddings.shape}")
             elif os.path.exists('course_embeddings_float16.npy'):
