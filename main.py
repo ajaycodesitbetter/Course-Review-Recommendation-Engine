@@ -644,6 +644,78 @@ async def recommend_courses(
         logger.exception(f"Error in /recommendations endpoint: {e}")
         return JSONResponse(status_code=500, content={"error": str(e)})
 
+@app.get("/external/udemy-rapid/search")
+async def udemy_rapid_search(
+    query: str = Query(..., min_length=1),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(12, ge=1, le=50)
+):
+    """Search Udemy via RapidAPI and normalize results to CourseScout shape"""
+    try:
+        RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY")
+        RAPIDAPI_HOST = os.getenv("RAPIDAPI_HOST", "udemy-paid-courses-for-free-api.p.rapidapi.com")
+        if not RAPIDAPI_KEY:
+            logger.warning("RAPIDAPI_KEY not configured")
+            return JSONResponse(content=[])
+
+        url = "https://udemy-paid-courses-for-free-api.p.rapidapi.com/rapidapi/courses/search"
+        headers = {
+            "X-RapidAPI-Key": RAPIDAPI_KEY,
+            "X-RapidAPI-Host": RAPIDAPI_HOST,
+            "Accept": "application/json"
+        }
+        params = {"page": str(page), "page_size": str(page_size), "query": query}
+
+        client = session_pool
+        close_after = False
+        if not client:
+            timeout = aiohttp.ClientTimeout(total=15)
+            client = aiohttp.ClientSession(timeout=timeout)
+            close_after = True
+        try:
+            async with client.get(url, headers=headers, params=params) as resp:
+                if resp.status != 200:
+                    logger.warning(f"RapidAPI upstream status {resp.status}")
+                    return JSONResponse(content=[])
+                data = await resp.json()
+                items = data.get("results") or data.get("data") or []
+                results = []
+                for item in items:
+                    try:
+                        img = item.get("image") or item.get("image_480x270") or item.get("thumbnail") or ""
+                        instructors = item.get("instructors") or item.get("authors") or []
+                        if isinstance(instructors, list):
+                            instructor_list = [{"name": (i.get("name") or i.get("title") or "")} for i in instructors]
+                        else:
+                            instructor_list = [{"name": str(instructors)}]
+                        cid = item.get("id") or item.get("course_id") or abs(hash(item.get("url") or item.get("title", "")))
+                        results.append({
+                            "id": cid,
+                            "title": item.get("title", ""),
+                            "url": item.get("url", ""),
+                            "price": item.get("price") or ("Free" if not item.get("is_paid", True) else "Paid"),
+                            "is_paid": bool(item.get("is_paid", True)),
+                            "visible_instructors": instructor_list,
+                            "image_480x270": img,
+                            "avg_rating": float(item.get("rating") or item.get("avg_rating") or 0) or 0.0,
+                            "rating": float(item.get("rating") or item.get("avg_rating") or 0) or 0.0,
+                            "num_subscribers": int(item.get("num_subscribers") or item.get("students") or 0),
+                            "num_reviews": int(item.get("num_reviews") or 0),
+                            "instructional_level": item.get("level") or item.get("instructional_level") or "All Levels",
+                            "headline": item.get("headline") or item.get("short_description") or "",
+                            "description": item.get("description") or "",
+                            "primary_category": {"name": item.get("category") or ""}
+                        })
+                    except Exception:
+                        continue
+                return JSONResponse(content=results)
+        finally:
+            if close_after:
+                await client.close()
+    except Exception as e:
+        logger.exception(f"Error in /external/udemy-rapid/search: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
 @app.get("/trending")
 async def get_trending_courses(
     limit: int = Query(10, ge=1, le=50)

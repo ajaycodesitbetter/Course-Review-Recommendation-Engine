@@ -1378,10 +1378,26 @@ async function searchCourses(query) {
                 recommendationsSection.classList.add('hidden');
             }
         } else {
-            searchSection.classList.add('hidden');
-            recommendationsSection.classList.add('hidden');
-            document.getElementById('search-input').focus();
-            showToast('No courses found for that search.', 'warning');
+            // Fallback to external RapidAPI-backed search
+            try {
+                const extUrl = `${config.BACKEND_BASE_URL}/external/udemy-rapid/search?query=${encodeURIComponent(query)}&page=1&page_size=12`;
+                const extResults = await fetchJSONWithRetry(extUrl, {}, 1, 600);
+                if (Array.isArray(extResults) && extResults.length > 0) {
+                    searchSection.classList.remove('hidden');
+                    await displayCourses(extResults, 'search-movies');
+                    recommendationsSection.classList.add('hidden');
+                } else {
+                    searchSection.classList.add('hidden');
+                    recommendationsSection.classList.add('hidden');
+                    document.getElementById('search-input').focus();
+                    showToast('No courses found for that search.', 'warning');
+                }
+            } catch (e) {
+                searchSection.classList.add('hidden');
+                recommendationsSection.classList.add('hidden');
+                document.getElementById('search-input').focus();
+                showToast('No courses found for that search.', 'warning');
+            }
         }
     } catch (error) {
         console.error('Error searching courses:', error);
