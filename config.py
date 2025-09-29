@@ -34,9 +34,9 @@ class Config:
     DEBUG: bool = os.getenv('DEBUG', 'true').lower() == 'true'
     LOG_LEVEL: str = os.getenv('LOG_LEVEL', 'INFO')
     
-    # File paths
-    COURSES_DATA_FILE: str = "final_courses_cleaned.feather"
-    EMBEDDINGS_FILE: str = "course_embeddings_float16.npy"
+    # File paths - use sample data for deployment
+    COURSES_DATA_FILE: str = os.getenv('COURSES_DATA_FILE', "courses_data.sample.feather")
+    EMBEDDINGS_FILE: str = os.getenv('EMBEDDINGS_FILE', "course_embeddings_sample.npy")
     MODEL_FILE: str = "fine_tuned_sbert_course_model.zip"
     
     @classmethod
