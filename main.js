@@ -541,7 +541,18 @@ function getCourseImageUrl(course) {
         if (raw.startsWith('//')) return `https:${raw}`;
         return raw;
     }
-    return FALLBACK_POSTER_URL;
+return FALLBACK_POSTER_URL;
+}
+
+function getSafeImageSrc(course) {
+    try {
+        const url = getCourseImageUrl(course);
+        if (!url) return FALLBACK_POSTER_URL;
+        // Always proxy through backend to avoid hotlink/cold-start issues
+        return `${config.BACKEND_BASE_URL}/image-proxy?url=${encodeURIComponent(url)}`;
+    } catch (e) {
+        return FALLBACK_POSTER_URL;
+    }
 }
 
 function movieNeedsPoster(movie) {
@@ -616,7 +627,7 @@ function createCourseCard(course, showTrendingNumber = false, trendingIndex = 0)
             ${showTrendingNumber ? `<div class="trending-number">${trendingIndex + 1}</div>` : ''}
             <div class="poster-container aspect-[16/9] w-full rounded-xl overflow-hidden mb-4 relative">
                 ${course.is_paid === false ? `<div class="free-badge">FREE</div>` : ''}
-                <img src="${getCourseImageUrl(course)}" alt="${course.title}" ${shouldEagerLoad ? 'loading="eager"' : 'loading="lazy"'} 
+                <img src="${getSafeImageSrc(course)}" alt="${course.title}" ${shouldEagerLoad ? 'loading="eager"' : 'loading="lazy"'} 
                      onerror="this.onerror=null;this.src='https://dummyimage.com/480x270/1f2937/9ca3af&text=No+Image';" 
                      data-course-id="${course.id}"
                      class="w-full h-full object-cover rounded-xl transition-transform group-hover:scale-110" />
@@ -706,7 +717,7 @@ async function showCourseDetail(courseId) {
             <div class="grid md:grid-cols-4 gap-6">
                 <div class="md:col-span-1">
                     ${course.is_paid === false ? `<div class="free-badge">FREE</div>` : ''}
-                    <img src="${getCourseImageUrl(course)}" alt="${course.title}" class="w-full rounded-xl shadow-lg mb-4">
+                    <img src="${getSafeImageSrc(course)}" alt="${course.title}" class="w-full rounded-xl shadow-lg mb-4">
                     ${course.url ? `
                         <a href="${course.url}" target="_blank" class="w-full bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-white flex items-center justify-center transition-colors mb-3">
                             <i data-lucide="external-link" class="w-4 h-4 mr-2"></i>
@@ -1061,7 +1072,7 @@ function updateWatchlistModal() {
     } else {
         content.innerHTML = watchlist.map(course => `
             <div class="bg-gray-800/30 rounded-2xl p-4">
-                <img src="${getCourseImageUrl(course)}" alt="${course.title}" 
+                <img src="${getSafeImageSrc(course)}" alt="${course.title}" 
                         class="w-full object-cover rounded-xl mb-3 cursor-pointer" onclick="showCourseDetail(${course.id})">
                 <h3 class="font-semibold text-sm mb-2 line-clamp-1">${course.title}</h3>
                 <button onclick="toggleWatchlist(${JSON.stringify(course).replace(/\"/g, '&quot;')})" 
@@ -1230,7 +1241,7 @@ function displaySuggestions(suggestions) {
 
     content.innerHTML = suggestions.map((course, index) => `
         <div class="search-suggestion-item" data-index="${index}" onclick="selectSuggestion(${index})">
-            <img src="${getCourseImageUrl(course)}" alt="${course.title}" class="suggestion-poster" loading="lazy">
+            <img src="${getSafeImageSrc(course)}" alt="${course.title}" class="suggestion-poster" loading="lazy">
             <div class="suggestion-info">
                 <div class="suggestion-title">${course.title}</div>
                 <div class="suggestion-meta">

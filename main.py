@@ -15,7 +15,7 @@ This backend server provides AI-powered course recommendations using:
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response, RedirectResponse
 import pandas as pd
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
@@ -162,6 +162,13 @@ session_pool = None
 UDEMY_API_KEY = config.UDEMY_API_KEY
 UDEMY_BASE_URL = config.UDEMY_BASE_URL
 API_TIMEOUT = config.API_TIMEOUT_SEC
+
+# Allowed hosts for image proxying to prevent SSRF
+ALLOWED_IMAGE_HOSTS = {
+    "udemycdn.com", "img-c.udemycdn.com", "img-b.udemycdn.com", "img-a.udemycdn.com",
+    "learn.microsoft.com", "docs.microsoft.com",
+    "images.unsplash.com", "i.imgur.com"
+}
 
 # ===========================================
 # STARTUP AND SHUTDOWN EVENTS
@@ -396,6 +403,51 @@ def calculate_course_similarity(courses: List[dict]) -> np.ndarray:
 # ===========================================
 # API ENDPOINTS
 # ===========================================
+
+def _host_allowed(host: str) -> bool:
+    try:
+        host = host.lower()
+    except Exception:
+        return False
+    for allowed in ALLOWED_IMAGE_HOSTS:
+        if host == allowed or host.endswith("." + allowed):
+            return True
+    return False
+
+@app.get("/image-proxy")
+async def image_proxy(url: str = Query(..., description="Remote image URL to proxy")):
+    """Lightweight image proxy to improve reliability and avoid hotlink issues.
+    Only whitelisted hosts are allowed to mitigate SSRF risks.
+    """
+    try:
+        from urllib.parse import urlparse
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https") or not parsed.netloc or not _host_allowed(parsed.hostname or ""):
+            logger.warning(f"Blocked image proxy request to host: {parsed.hostname}")
+            return RedirectResponse(url=config.FALLBACK_POSTER_URL, status_code=302)
+        client = session_pool
+        if not client:
+            timeout = aiohttp.ClientTimeout(total=10)
+            client = aiohttp.ClientSession(timeout=timeout)
+            close_after = True
+        else:
+            close_after = False
+        try:
+            async with client.get(url) as resp:
+                if resp.status == 200:
+                    data = await resp.read()
+                    content_type = resp.headers.get("Content-Type", "image/jpeg")
+                    headers = {"Cache-Control": "public, max-age=86400"}
+                    return Response(content=data, media_type=content_type, headers=headers)
+                else:
+                    logger.warning(f"Image proxy upstream status {resp.status} for {url}")
+                    return RedirectResponse(url=config.FALLBACK_POSTER_URL, status_code=302)
+        finally:
+            if close_after:
+                await client.close()
+    except Exception as e:
+        logger.exception(f"Image proxy error: {e}")
+        return RedirectResponse(url=config.FALLBACK_POSTER_URL, status_code=302)
 
 @app.get("/")
 async def read_root():
