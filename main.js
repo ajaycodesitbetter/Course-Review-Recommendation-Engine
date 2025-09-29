@@ -442,15 +442,11 @@ function getGenres() {
 
 async function getLanguages() {
     try {
-        const response = await fetch(`${TMDB_BASE_URL}/configuration/languages?api_key=${TMDB_API_KEY}`);
-        const data = await response.json();
-        languages = data.reduce((acc, lang) => {
-            acc[lang.iso_639_1] = lang.english_name;
-            return acc;
-        }, {});
+        // Use built-in LANGUAGE_MAP to avoid external dependency errors
+        languages = Object.fromEntries(Object.entries(LANGUAGE_MAP).map(([code, info]) => [code, info.name]));
         populateLanguageFilter();
     } catch (error) {
-        console.error('Error fetching languages:', error);
+        console.error('Error initializing languages:', error);
     }
 }
 
