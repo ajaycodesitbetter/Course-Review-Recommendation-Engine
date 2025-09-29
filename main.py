@@ -433,7 +433,12 @@ async def image_proxy(url: str = Query(..., description="Remote image URL to pro
         else:
             close_after = False
         try:
-            async with client.get(url) as resp:
+headers_req = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+                "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+                "Referer": "https://www.udemy.com/"
+            }
+            async with client.get(url, headers=headers_req) as resp:
                 if resp.status == 200:
                     data = await resp.read()
                     content_type = resp.headers.get("Content-Type", "image/jpeg")
