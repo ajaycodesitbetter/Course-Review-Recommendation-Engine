@@ -1032,12 +1032,12 @@ function updateWatchlistModal() {
             </div>
         `;
     } else {
-        content.innerHTML = watchlist.map(movie => `
+        content.innerHTML = watchlist.map(course => `
             <div class="bg-gray-800/30 rounded-2xl p-4">
-                <img src="${getPosterUrl(movie.poster_path)}" alt="${movie.title}" 
-                        class="w-full object-cover rounded-xl mb-3 cursor-pointer" onclick="showMovieDetail(${movie.id})">
-                <h3 class="font-semibold text-sm mb-2 line-clamp-1">${movie.title}</h3>
-                <button onclick="toggleWatchlist(${JSON.stringify(movie).replace(/"/g, '&quot;')})" 
+                <img src="${getCourseImageUrl(course)}" alt="${course.title}" 
+                        class="w-full object-cover rounded-xl mb-3 cursor-pointer" onclick="showCourseDetail(${course.id})">
+                <h3 class="font-semibold text-sm mb-2 line-clamp-1">${course.title}</h3>
+                <button onclick="toggleWatchlist(${JSON.stringify(course).replace(/\"/g, '&quot;')})" 
                         class="w-full bg-red-600 hover:bg-red-700 py-2 rounded-lg text-sm flex items-center justify-center transition-colors">
                     <i data-lucide="trash-2" class="w-4 h-4 mr-2"></i>
                     Remove
@@ -1106,22 +1106,21 @@ let recsDebounceTimeout = null;
 
 // Simple local suggestions for very short queries
 function getImmediateSuggestions(query) {
-    const commonMovies = [
-        { title: "The Dark Knight", id: 155 },
-        { title: "Inception", id: 27205 },
-        { title: "Interstellar", id: 157336 },
-        { title: "The Matrix", id: 603 },
-        { title: "Pulp Fiction", id: 680 },
-        { title: "The Godfather", id: 238 },
-        { title: "Avatar", id: 19995 },
-        { title: "Titanic", id: 597 },
-        { title: "Star Wars", id: 11 },
-        { title: "The Avengers", id: 24428 }
+    const commonCourses = [
+        { title: "Python Bootcamp" },
+        { title: "Microsoft Excel" },
+        { title: "Web Development" },
+        { title: "Data Science" },
+        { title: "Machine Learning" },
+        { title: "JavaScript" },
+        { title: "React" },
+        { title: "AWS Certification" },
+        { title: "SQL" },
+        { title: "Docker & Kubernetes" }
     ];
-    
-    const queryLower = query.toLowerCase();
-    return commonMovies
-        .filter(movie => movie.title.toLowerCase().includes(queryLower))
+    const q = query.toLowerCase();
+    return commonCourses
+        .filter(course => course.title.toLowerCase().includes(q))
         .slice(0, 4); // Limit to 4 for immediate suggestions
 }
 
@@ -1195,26 +1194,26 @@ function displaySuggestions(suggestions) {
         content.innerHTML = `
             <div class="no-suggestions">
                 <i data-lucide="search" class="w-5 h-5 mx-auto mb-2 text-gray-500"></i>
-                <p>No movies found</p>
+                <p>No courses found</p>
             </div>
         `;
         suggestionsContainer.classList.remove('hidden');
         return;
     }
 
-        content.innerHTML = suggestions.map((movie, index) => `
+    content.innerHTML = suggestions.map((course, index) => `
         <div class="search-suggestion-item" data-index="${index}" onclick="selectSuggestion(${index})">
-            <img src="${getPosterUrl(movie.poster_path)}" alt="${movie.title}" class="suggestion-poster" loading="lazy">
+            <img src="${getCourseImageUrl(course)}" alt="${course.title}" class="suggestion-poster" loading="lazy">
             <div class="suggestion-info">
-                <div class="suggestion-title">${movie.title}</div>
+                <div class="suggestion-title">${course.title}</div>
                 <div class="suggestion-meta">
-                    ${movie.release_date ? `<span class="suggestion-year">${new Date(movie.release_date).getFullYear()}</span>` : ''}
-                    ${movie.vote_average && movie.vote_average > 0 ? `
+                    ${course.avg_rating || course.rating ? `
                         <span class="suggestion-rating">
                             <i data-lucide="star" class="w-3 h-3"></i>
-                            ${movie.vote_average.toFixed(1)}
+                            ${(course.avg_rating || course.rating).toFixed(1)}
                         </span>
                     ` : ''}
+                    ${course.instructional_level ? `<span class="suggestion-year">${course.instructional_level}</span>` : ''}
                 </div>
             </div>
         </div>
@@ -1227,12 +1226,12 @@ function displaySuggestions(suggestions) {
 
 function selectSuggestion(index) {
     if (index >= 0 && index < currentSuggestions.length) {
-        const movie = currentSuggestions[index];
-        document.getElementById('search-input').value = movie.title;
+        const course = currentSuggestions[index];
+        document.getElementById('search-input').value = course.title;
         hideSuggestions();
         
-        // Trigger search with the selected movie title
-        searchMovies(movie.title);
+        // Trigger search with the selected course title
+        searchCourses(course.title);
     }
 }
 
@@ -1273,7 +1272,7 @@ function handleSuggestionEnter() {
         // If no suggestion is selected, perform regular search
         const query = document.getElementById('search-input').value.trim();
         if (query) {
-            searchMovies(query);
+            searchCourses(query);
         }
     }
 }
