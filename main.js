@@ -636,6 +636,144 @@ function createCourseCard(course, showTrendingNumber = false, trendingIndex = 0)
 }
 
 // ===========================================
+// COURSE DETAIL FUNCTIONS
+// ===========================================
+async function showCourseDetail(courseId) {
+    const modal = document.getElementById('course-modal');
+    const content = document.getElementById('course-detail-content');
+
+    try {
+        addToHistory(courseId);
+
+        // First try to find the course in our local data or cache
+        let course = null;
+        const searchParams = new URLSearchParams();
+        searchParams.set('course_id', courseId);
+        
+        // Search for the course by ID (backend may not expose /course/{id})
+        const searchResponse = await fetch(`${config.BACKEND_BASE_URL}/search?query=id:${courseId}&limit=1`);
+        if (searchResponse.ok) {
+            const searchResults = await searchResponse.json();
+            if (searchResults.length > 0) {
+                course = searchResults[0];
+            }
+        }
+
+        if (!course) {
+            showToast('Course details not found.', 'error');
+            return;
+        }
+
+        const isInWatchlist = watchlist.some(item => item.id === course.id);
+        const instructors = course.visible_instructors || [];
+        const instructorNames = instructors.map(inst => inst.name || inst.display_name).join(', ');
+        const category = course.primary_category?.name || course.topic?.name || course.primary_subcategory?.name || 'Unknown';
+
+        content.innerHTML = `
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold line-clamp-2">${course.title}</h2>
+                <button onclick="closeCourseModal()" class="p-2 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="grid md:grid-cols-4 gap-6">
+                <div class="md:col-span-1">
+                    ${course.is_paid === false ? `<div class="free-badge">FREE</div>` : ''}
+                    <img src="${getCourseImageUrl(course)}" alt="${course.title}" class="w-full rounded-xl shadow-lg mb-4">
+                    ${course.url ? `
+                        <a href="${course.url}" target="_blank" class="w-full bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-white flex items-center justify-center transition-colors mb-3">
+                            <i data-lucide="external-link" class="w-4 h-4 mr-2"></i>
+                            View Course
+                        </a>
+                    ` : ''}
+                </div>
+                <div class="md:col-span-3 flex flex-col">
+                    <div class="flex items-center gap-4 mb-4">
+                        <span class="flex items-center text-yellow-400">
+                            <i data-lucide="star" class="w-4 h-4 mr-1"></i>
+                            ${course.avg_rating || course.rating ? (course.avg_rating || course.rating).toFixed(1) : 'N/A'}
+                        </span>
+                        <span class="text-gray-400">${course.instructional_level || course.level || 'All levels'}</span>
+                        <span class="text-gray-400">${course.num_subscribers ? (course.num_subscribers > 1000 ? (course.num_subscribers/1000).toFixed(1) + 'K' : course.num_subscribers) + ' students' : ''}</span>
+                    </div>
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="px-3 py-1 bg-blue-500/20 text-blue-300 text-sm rounded-full">${category}</span>
+                        <span class="px-3 py-1 bg-orange-500/20 text-orange-300 text-sm rounded-full">${course.price || (course.is_paid === false ? 'Free' : 'Paid')}</span>
+                        ${course.language ? `<span class="px-3 py-1 bg-green-500/20 text-green-300 text-sm rounded-full">${course.language}</span>` : ''}
+                    </div>
+                    ${instructorNames ? `<div class="mb-4">
+                        <strong class="text-gray-300">Instructor(s):</strong>
+                        <span class="text-gray-400 ml-2">${instructorNames}</span>
+                    </div>` : ''}
+                    <p class="text-gray-300 mb-6">${course.description || course.headline || 'No description available.'}</p>
+                    <div class="flex flex-wrap gap-3 mb-6">
+                        <button data-course-id="${course.id}" onclick="toggleWatchlist(${JSON.stringify(course).replace(/"/g, '&quot;')})" 
+                                class="bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded-lg text-white flex items-center transition-colors">
+                            <i data-lucide="bookmark" class="w-4 h-4 mr-2"></i>
+                            ${isInWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
+                        </button>
+                        <button onclick="rateCourse(${course.id}, true); updateRatingButtons(${course.id})" 
+                                id="like-btn-${course.id}" class="rating-btn px-4 py-2 rounded-lg flex items-center transition-colors bg-gray-700 hover:bg-gray-600 text-gray-300">
+                            <i data-lucide="thumbs-up" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="rateCourse(${course.id}, false); updateRatingButtons(${course.id})" 
+                                id="dislike-btn-${course.id}" class="rating-btn px-4 py-2 rounded-lg flex items-center transition-colors bg-gray-700 hover:bg-gray-600 text-gray-300">
+                            <i data-lucide="thumbs-down" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div id="course-recommendations-section" class="mt-10">
+                <div class="section-navigation">
+                    <h3 class="text-xl font-bold mb-4 flex items-center">
+                        <i data-lucide="target" class="w-5 h-5 mr-2 text-green-400"></i>
+                        Similar Courses
+                    </h3>
+                </div>
+                <div class="horizontal-scroll scrollbar-hide pb-4">
+                    <div id="course-recommendations" class="flex gap-6">
+                        <div class="text-center py-8 text-gray-400 min-w-full">
+                            <svg class="animate-spin h-6 w-6 mx-auto mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                            </svg>
+                            <p class="text-sm">Loading recommendations...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        modal.classList.remove('hidden');
+        lucide.createIcons();
+        
+        // Load course recommendations
+        try {
+            const recResponse = await fetch(`${config.BACKEND_BASE_URL}/recommendations?course_id=${course.id}&limit=8`);
+            if (recResponse.ok) {
+                const recommendations = await recResponse.json();
+                if (recommendations.length > 0) {
+                    await displayCourses(recommendations, 'course-recommendations');
+                } else {
+                    document.getElementById('course-recommendations').innerHTML = '<p class="text-gray-400 text-center min-w-full">No similar courses found.</p>';
+                }
+            }
+        } catch (recError) {
+            console.warn('Failed to load course recommendations:', recError);
+            document.getElementById('course-recommendations').innerHTML = '<p class="text-gray-400 text-center min-w-full">Failed to load similar courses.</p>';
+        }
+        
+    } catch (error) {
+        console.error('Error showing course detail:', error);
+        showToast('Failed to load course details.', 'error');
+    }
+}
+
+function closeCourseModal() {
+    document.getElementById('course-modal').classList.add('hidden');
+}
+
+// ===========================================
 // MOVIE DETAIL FUNCTIONS
 // ===========================================
 async function showMovieDetail(movieId) {
@@ -824,10 +962,12 @@ function updateWatchlistCount() {
     }
 }
 
-function updateWatchlistButton(movie) {
-    const isInWatchlist = watchlist.some(item => item.id === movie.id);
-    const buttons = document.querySelectorAll(`[data-movie-id="${movie.id}"]`);
-    buttons.forEach(button => {
+function updateWatchlistButton(course) {
+    const isInWatchlist = watchlist.some(item => item.id === course.id);
+    
+    // Update course card buttons
+    const courseButtons = document.querySelectorAll(`[data-course-id="${course.id}"]`);
+    courseButtons.forEach(button => {
         if (button.classList.contains('watchlist-btn')) {
             button.innerHTML = `
                 <i data-lucide="${isInWatchlist ? 'check' : 'plus'}" class="w-4 h-4 mr-2"></i>
@@ -836,7 +976,7 @@ function updateWatchlistButton(movie) {
             button.className = `watchlist-btn w-full py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center ${
                 isInWatchlist 
                     ? 'bg-green-600 hover:bg-green-700 text-white' 
-                    : 'bg-purple-600 hover:bg-purple-700 text-white'
+                    : 'bg-orange-600 hover:bg-orange-700 text-white'
             }`;
         } else {
             // Update modal buttons that don't have watchlist-btn class
@@ -847,10 +987,38 @@ function updateWatchlistButton(movie) {
             button.className = `${
                 isInWatchlist 
                     ? 'bg-red-600 hover:bg-red-700' 
-                    : 'bg-purple-600 hover:bg-purple-700'
+                    : 'bg-orange-600 hover:bg-orange-700'
             } px-4 py-2 rounded-lg text-white flex items-center transition-colors`;
         }
     });
+    
+    // Also update any movie buttons for backward compatibility
+    const movieButtons = document.querySelectorAll(`[data-movie-id="${course.id}"]`);
+    movieButtons.forEach(button => {
+        if (button.classList.contains('watchlist-btn')) {
+            button.innerHTML = `
+                <i data-lucide="${isInWatchlist ? 'check' : 'plus'}" class="w-4 h-4 mr-2"></i>
+                ${isInWatchlist ? 'In Watchlist' : 'Add to Watchlist'}
+            `;
+            button.className = `watchlist-btn w-full py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center ${
+                isInWatchlist 
+                    ? 'bg-green-600 hover:bg-green-700 text-white' 
+                    : 'bg-orange-600 hover:bg-orange-700 text-white'
+            }`;
+        } else {
+            // Update modal buttons that don't have watchlist-btn class
+            button.innerHTML = `
+                <i data-lucide="bookmark" class="w-4 h-4 mr-2"></i>
+                ${isInWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
+            `;
+            button.className = `${
+                isInWatchlist 
+                    ? 'bg-red-600 hover:bg-red-700' 
+                    : 'bg-orange-600 hover:bg-orange-700'
+            } px-4 py-2 rounded-lg text-white flex items-center transition-colors`;
+        }
+    });
+    
     lucide.createIcons();
 }
 
@@ -1230,6 +1398,36 @@ async function loadInitialData() {
     }
 }
 
+async function fetchPersonalizedRecommendations() {
+    try {
+        const payload = {
+            interests: userProfile.liked_courses || [],
+            skill_level: userProfile.skill_level || 'beginner',
+            language: userProfile.language || ['en'],
+            budget: userProfile.budget || 'any',
+            mood: userProfile.mood || 'happy'
+        };
+
+        const response = await fetch(`${config.BACKEND_BASE_URL}/recommendations/user`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (response.ok) {
+            return await response.json();
+        } else {
+            console.warn('Personalized recommendations failed:', response.status);
+            return [];
+        }
+    } catch (error) {
+        console.error('Error fetching personalized recommendations:', error);
+        return [];
+    }
+}
+
 async function loadPersonalizedRecommendations() {
     // Debounce and abort to prevent blocking searches
     if (recsDebounceTimeout) clearTimeout(recsDebounceTimeout);
@@ -1250,15 +1448,15 @@ async function loadPersonalizedRecommendations() {
             `;
 
             try {
-                const recommendedMovies = await fetchPersonalizedRecommendations();
-                if (recommendedMovies && recommendedMovies.length > 0) {
+                const recommendedCourses = await fetchPersonalizedRecommendations();
+                if (recommendedCourses && recommendedCourses.length > 0) {
                     container.innerHTML = '';
-                    await displayMovies(recommendedMovies, 'user-recommendation-movies');
+                    await displayCourses(recommendedCourses, 'user-recommendation-movies');
                 } else {
                     container.innerHTML = `
                         <div class="text-center py-12 text-gray-400">
                             <i data-lucide="heart" class="w-16 h-16 mx-auto mb-4"></i>
-                            <p>Watch more movies to get personalized recommendations</p>
+                            <p>Take more courses to get personalized recommendations</p>
                         </div>
                     `;
                     lucide.createIcons();
@@ -1350,6 +1548,27 @@ function addToHistory(movieId) {
         }
         saveUserProfile();
     }
+}
+
+function rateCourse(courseId, liked) {
+    if (!userProfile.liked_courses) userProfile.liked_courses = [];
+    if (!userProfile.disliked_courses) userProfile.disliked_courses = [];
+    
+    if (liked) {
+        if (!userProfile.liked_courses.includes(courseId)) {
+            userProfile.liked_courses.push(courseId);
+        }
+        userProfile.disliked_courses = userProfile.disliked_courses.filter(id => id !== courseId);
+    } else {
+        if (!userProfile.disliked_courses.includes(courseId)) {
+            userProfile.disliked_courses.push(courseId);
+        }
+        userProfile.liked_courses = userProfile.liked_courses.filter(id => id !== courseId);
+    }
+    saveUserProfile();
+    
+    // Refresh recommendations after rating change
+    loadPersonalizedRecommendations();
 }
 
 function rateMovie(movieId, liked) {
@@ -1567,6 +1786,12 @@ function setupEventListeners() {
         }
     });
 
+    document.getElementById('course-modal').addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) {
+            closeCourseModal();
+        }
+    });
+
     document.getElementById('movie-modal').addEventListener('click', (e) => {
         if (e.target === e.currentTarget) {
             closeMovieModal();
@@ -1590,6 +1815,7 @@ function setupEventListeners() {
         if (e.key === 'Escape') {
             document.getElementById('profile-modal').classList.add('hidden');
             document.getElementById('watchlist-modal').classList.add('hidden');
+            document.getElementById('course-modal').classList.add('hidden');
             document.getElementById('movie-modal').classList.add('hidden');
             document.getElementById('mood-popup').classList.add('hidden');
             closeTrailerModal();

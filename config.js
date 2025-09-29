@@ -24,8 +24,8 @@ class Config {
         this.FALLBACK_POSTER_URL = this.getEnvVar('FALLBACK_POSTER_URL', 'https://dummyimage.com/480x270/1f2937/9ca3af&text=No+Image');
         this.COURSE_LINK_BASE = this.getEnvVar('COURSE_LINK_BASE', 'https://www.udemy.com');
         
-        // Default to current deployment backend; can be overridden via env var
-        this.BACKEND_BASE_URL = this.getEnvVar('BACKEND_BASE_URL', 'https://coursescout.vercel.app');
+        // Default to Render backend (frontend is on Vercel)
+        this.BACKEND_BASE_URL = this.getEnvVar('BACKEND_BASE_URL', 'https://course-review-recommendation-engine.onrender.com');
         this.API_TIMEOUT_SEC = parseInt(this.getEnvVar('API_TIMEOUT_SEC', '20'));
         this.API_MAX_RETRIES = parseInt(this.getEnvVar('API_MAX_RETRIES', '3'));
         

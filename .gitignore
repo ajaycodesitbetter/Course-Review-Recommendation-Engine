@@ -42,6 +42,12 @@ models/
 *.pkl
 *.pickle
 
+# Allow committed sample datasets/embeddings for demo deployments
+!courses_data.sample.feather
+!courses_data.sample.csv
+!course_embeddings_sample.npy
+!courses_data.sample.feather.zip
+
 # Large local dataset (do not commit)
 courses_data.csv
 
