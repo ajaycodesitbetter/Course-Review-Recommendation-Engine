@@ -1,8 +1,16 @@
 {
   "status": "commited",
-  "type": "frontend",
+  "type": "backend",
   "scope": "codebase",
   "localEndpoint": "http://localhost:8000",
-  "loginUser": "ajay",
-  "loginPassword": "ajay117"
+  "backendAuthType": "public",
+  "executionArgs": {
+    "projectName": "CourseMate",
+    "projectPath": "C:\\Users\\AjayM.AJAYS_DEVICE\\CourseMate",
+    "testIds": [],
+    "additionalInstruction": "Focus on testing the backend API endpoints for course search, recommendations, trending courses, and health checks. The server should be tested assuming it loads the sample dataset (courses_data.sample.feather) with 15,000 courses.",
+    "envs": {
+      "API_KEY": "sk-user-Gq7iA50tmvrm3ltVFQ0mKON2vzq4oEt-qxSVAF27q89w21amugWOzEbvfxDlP2EzgeLO1EgO0Sm58sRR4qzEhOK4v1SwM_1dezQ4u6G_SMRQkmXk19rFF6OvmIbo55RLaDE"
+    }
+  }
 }
