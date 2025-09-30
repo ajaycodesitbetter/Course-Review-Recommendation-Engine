@@ -1,10 +1,11 @@
 {
-  "timestamp": "2025-09-29T13:27:26.882851",
-  "base_url": "https://coursescout.vercel.app",
+  "timestamp": "2025-09-30T20:10:47.899342",
+  "api_base_url": "https://course-review-recommendation-engine.onrender.com",
+  "frontend_url": "https://coursescout.vercel.app",
   "tests": {
     "health": {
-      "status": "fail",
-      "error": "HTTP 404"
+      "status": "error",
+      "error": "HTTPSConnectionPool(host='course-review-recommendation-engine.onrender.com', port=443): Read timed out. (read timeout=10)"
     }
   },
   "overall_status": "failed"

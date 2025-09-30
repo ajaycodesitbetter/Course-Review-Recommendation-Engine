@@ -2,36 +2,63 @@
   "tech_stack": [
     "Python",
     "FastAPI",
-    "JavaScript (ES6+)",
-    "HTML5",
-    "CSS3",
-    "Tailwind CSS",
-    "pandas",
-    "numpy", 
+    "pandas", 
+    "numpy",
     "scikit-learn",
     "aiohttp",
-    "Uvicorn",
-    "SQLite (implicit via pandas)",
-    "TF-IDF ML model",
+    "TF-IDF Vectorizer",
     "Cosine Similarity"
   ],
   "features": [
     {
-      "name": "Course Search API",
-      "description": "Search across 98K+ courses with fuzzy matching and scoring",
+      "name": "API Status",
+      "description": "Health check endpoint for API status",
+      "files": ["main.py"],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "paths": {
+          "/api": {
+            "get": {
+              "summary": "API health check",
+              "responses": {
+                "200": {
+                  "description": "API status response",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "message": {"type": "string"},
+                          "status": {"type": "string"},
+                          "created_by": {"type": "string"}
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Course Search",
+      "description": "Search courses by query string using local dataset",
       "files": ["main.py"],
       "api_doc": {
         "openapi": "3.0.0",
         "paths": {
           "/search": {
             "get": {
-              "summary": "Search courses",
+              "summary": "Search for courses",
               "parameters": [
                 {
                   "name": "query",
-                  "in": "query", 
+                  "in": "query",
                   "required": true,
-                  "schema": {"type": "string"}
+                  "schema": {"type": "string"},
+                  "description": "Search query for courses"
                 }
               ],
               "responses": {
@@ -41,7 +68,26 @@
                     "application/json": {
                       "schema": {
                         "type": "array",
-                        "items": {"$ref": "#/components/schemas/CourseOut"}
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {"type": "integer"},
+                            "title": {"type": "string"},
+                            "visible_instructors": {"type": "array"},
+                            "image_480x270": {"type": "string"},
+                            "price": {"type": "string"},
+                            "is_paid": {"type": "boolean"},
+                            "avg_rating": {"type": "number"},
+                            "rating": {"type": "number"},
+                            "num_subscribers": {"type": "integer"},
+                            "num_reviews": {"type": "integer"},
+                            "instructional_level": {"type": "string"},
+                            "headline": {"type": "string"},
+                            "description": {"type": "string"},
+                            "primary_category": {"type": "object"},
+                            "url": {"type": "string"}
+                          }
+                        }
                       }
                     }
                   }
@@ -53,26 +99,54 @@
       }
     },
     {
-      "name": "AI Course Recommendations",
-      "description": "ML-based course recommendations using TF-IDF and cosine similarity",
+      "name": "Course Recommendations",
+      "description": "AI-powered course recommendations based on similarity using embeddings",
       "files": ["main.py"],
       "api_doc": {
-        "openapi": "3.0.0", 
+        "openapi": "3.0.0",
         "paths": {
           "/recommendations": {
             "get": {
-              "summary": "Get course recommendations",
+              "summary": "Get course recommendations based on a course ID",
               "parameters": [
                 {
                   "name": "course_id",
                   "in": "query",
                   "required": true,
-                  "schema": {"type": "integer"}
+                  "schema": {"type": "integer"},
+                  "description": "Course ID to get recommendations for"
+                },
+                {
+                  "name": "limit",
+                  "in": "query",
+                  "required": false,
+                  "schema": {"type": "integer", "minimum": 1, "maximum": 50, "default": 10},
+                  "description": "Maximum number of recommendations"
                 }
               ],
               "responses": {
                 "200": {
-                  "description": "List of recommended courses"
+                  "description": "List of recommended courses",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {"type": "integer"},
+                            "title": {"type": "string"},
+                            "visible_instructors": {"type": "array"},
+                            "image_480x270": {"type": "string"},
+                            "price": {"type": "string"},
+                            "is_paid": {"type": "boolean"},
+                            "avg_rating": {"type": "number"},
+                            "rating": {"type": "number"}
+                          }
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -81,8 +155,8 @@
       }
     },
     {
-      "name": "Trending Courses API", 
-      "description": "Get trending courses by subscriber count",
+      "name": "Trending Courses",
+      "description": "Get trending courses based on subscriber count with caching",
       "files": ["main.py"],
       "api_doc": {
         "openapi": "3.0.0",
@@ -90,9 +164,35 @@
           "/trending": {
             "get": {
               "summary": "Get trending courses",
+              "parameters": [
+                {
+                  "name": "limit",
+                  "in": "query",
+                  "required": false,
+                  "schema": {"type": "integer", "minimum": 1, "maximum": 50, "default": 10},
+                  "description": "Maximum number of courses to return"
+                }
+              ],
               "responses": {
                 "200": {
-                  "description": "List of trending courses"
+                  "description": "List of trending courses with cache headers",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {"type": "integer"},
+                            "title": {"type": "string"},
+                            "visible_instructors": {"type": "array"},
+                            "num_subscribers": {"type": "integer"},
+                            "rating": {"type": "number"}
+                          }
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -101,56 +201,44 @@
       }
     },
     {
-      "name": "Top Rated Courses API",
-      "description": "Get highest rated courses with quality filters", 
+      "name": "Top Rated Courses",
+      "description": "Get top-rated courses with minimum review threshold and caching",
       "files": ["main.py"],
       "api_doc": {
         "openapi": "3.0.0",
         "paths": {
           "/top-rated": {
             "get": {
-              "summary": "Get top rated courses",
+              "summary": "Get top-rated courses",
+              "parameters": [
+                {
+                  "name": "limit",
+                  "in": "query",
+                  "required": false,
+                  "schema": {"type": "integer", "minimum": 1, "maximum": 50, "default": 10},
+                  "description": "Maximum number of courses to return"
+                }
+              ],
               "responses": {
                 "200": {
-                  "description": "List of top rated courses"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      "name": "Personalized User Recommendations",
-      "description": "Personalized course recommendations via Udemy API integration",
-      "files": ["main.py"], 
-      "api_doc": {
-        "openapi": "3.0.0",
-        "paths": {
-          "/recommendations/user": {
-            "post": {
-              "summary": "Get personalized recommendations",
-              "requestBody": {
-                "required": true,
-                "content": {
-                  "application/json": {
-                    "schema": {
-                      "type": "object",
-                      "properties": {
-                        "mood": {"type": "string"},
-                        "language": {"type": "array", "items": {"type": "string"}},
-                        "liked_movies": {"type": "array"},
-                        "disliked_movies": {"type": "array"},
-                        "watchlist": {"type": "array"}
+                  "description": "List of top-rated courses with cache headers",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {"type": "integer"},
+                            "title": {"type": "string"},
+                            "rating": {"type": "number"},
+                            "num_reviews": {"type": "integer"}
+                          }
+                        }
                       }
                     }
                   }
                 }
-              },
-              "responses": {
-                "200": {
-                  "description": "Personalized course recommendations"
-                }
               }
             }
           }
@@ -158,63 +246,37 @@
       }
     },
     {
-      "name": "Frontend Course Browser",
-      "description": "Interactive course discovery interface with search, carousels, and user profiles",
-      "files": ["index.html", "main.js", "style.css", "config.js"],
-      "api_doc": {
-        "openapi": "3.0.0",
-        "info": {
-          "title": "CourseScout Frontend",
-          "description": "Single-page application with course search, recommendations, watchlist, and user profiles"
-        }
-      }
-    },
-    {
-      "name": "Static Asset Server",
-      "description": "Serves frontend assets and media files",
+      "name": "Course Categories",
+      "description": "Get available course categories for filtering",
       "files": ["main.py"],
       "api_doc": {
         "openapi": "3.0.0",
         "paths": {
-          "/": {
+          "/categories": {
             "get": {
-              "summary": "Serve main application"
-            }
-          },
-          "/style.css": {
-            "get": {
-              "summary": "Serve CSS styles"
-            }
-          },
-          "/main.js": {
-            "get": {
-              "summary": "Serve JavaScript application"
+              "summary": "Get available course categories",
+              "responses": {
+                "200": {
+                  "description": "List of available course categories",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {"type": "string"},
+                            "name": {"type": "string"},
+                            "icon": {"type": "string"}
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
-        }
-      }
-    },
-    {
-      "name": "Configuration Management",
-      "description": "Environment-based configuration system for API keys and settings",
-      "files": ["config.py", "config.js"],
-      "api_doc": {
-        "openapi": "3.0.0",
-        "info": {
-          "title": "Configuration System",
-          "description": "Manages application settings, API keys, and environment variables"
-        }
-      }
-    },
-    {
-      "name": "Data Processing Pipeline",
-      "description": "Processes raw course data and generates ML embeddings",
-      "files": ["process_data.py"],
-      "api_doc": {
-        "openapi": "3.0.0",
-        "info": {
-          "title": "Data Pipeline",
-          "description": "Transforms raw CSV data into optimized formats with ML features"
         }
       }
     }
