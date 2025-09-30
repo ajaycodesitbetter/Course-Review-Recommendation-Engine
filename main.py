@@ -12,24 +12,26 @@ This backend server provides AI-powered course recommendations using:
 - Machine learning-based course recommendations
 """
 
-from fastapi import FastAPI, Query, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, HTTPException, Query, Request, Form
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse, Response, RedirectResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 import pandas as pd
 import numpy as np
-from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.feature_extraction.text import TfidfVectorizer
-import requests
-import logging
 import asyncio
 import aiohttp
-from rapidfuzz import fuzz, process
+import logging
+from typing import List, Dict, Any, Optional
+import os
 import ftfy
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 from pydantic import BaseModel
-from typing import List, Optional, Dict, Any
-from fastapi import Body
+from datetime import datetime
+import json
 import time
+from config import config
 from functools import lru_cache
 import os
 from contextlib import asynccontextmanager
@@ -143,6 +145,9 @@ async def get_coursemate_icon():
 async def get_asset(filename: str):
     return FileResponse(f"assets/{filename}")
 
+# Add GZip compression for better performance
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -157,6 +162,10 @@ courses_df = None
 course_embeddings = None
 tfidf_vectorizer = None
 session_pool = None
+
+# In-memory cache for frequently accessed endpoints
+api_cache = {}
+CACHE_TTL = 60  # 60 seconds cache TTL
 
 # API Configuration
 UDEMY_API_KEY = config.UDEMY_API_KEY
@@ -414,6 +423,21 @@ def _host_allowed(host: str) -> bool:
             return True
     return False
 
+def get_cached_response(cache_key: str):
+    """Get cached response if valid, None otherwise"""
+    if cache_key in api_cache:
+        cached_data, timestamp = api_cache[cache_key]
+        if time.time() - timestamp < CACHE_TTL:
+            return cached_data
+        else:
+            # Remove expired cache entry
+            del api_cache[cache_key]
+    return None
+
+def set_cached_response(cache_key: str, data):
+    """Cache response with timestamp"""
+    api_cache[cache_key] = (data, time.time())
+
 @app.get("/image-proxy")
 async def image_proxy(url: str = Query(..., description="Remote image URL to proxy")):
     """Lightweight image proxy to improve reliability and avoid hotlink issues.
@@ -427,7 +451,7 @@ async def image_proxy(url: str = Query(..., description="Remote image URL to pro
             return RedirectResponse(url=config.FALLBACK_POSTER_URL, status_code=302)
         client = session_pool
         if not client:
-            timeout = aiohttp.ClientTimeout(total=10)
+            timeout = aiohttp.ClientTimeout(total=5)  # Reduced from 10s to 5s
             client = aiohttp.ClientSession(timeout=timeout)
             close_after = True
         else:
@@ -722,6 +746,13 @@ async def get_trending_courses(
 ):
     """Get trending courses based on subscriber count"""
     try:
+        # Check cache first
+        cache_key = f"trending_{limit}"
+        cached_result = get_cached_response(cache_key)
+        if cached_result is not None:
+            headers = {"Cache-Control": "public, max-age=60"}
+            return JSONResponse(content=cached_result, headers=headers)
+        
         logger.info("Fetching trending courses")
         
         if courses_df is None or courses_df.empty:
@@ -763,7 +794,12 @@ async def get_trending_courses(
             results.append(formatted_course)
         
         logger.info(f"Found {len(results)} trending courses")
-        return JSONResponse(content=results)
+        
+        # Cache the results
+        set_cached_response(cache_key, results)
+        
+        headers = {"Cache-Control": "public, max-age=60"}
+        return JSONResponse(content=results, headers=headers)
         
     except Exception as e:
         logger.exception(f"Error in /trending endpoint: {e}")
@@ -773,9 +809,16 @@ async def get_trending_courses(
 async def get_top_rated_courses(
     limit: int = Query(10, ge=1, le=50)
 ):
-    """Get top-rated courses based on rating"""
+    """Get top rated courses based on rating"""
     try:
-        logger.info("Fetching top-rated courses")
+        # Check cache first
+        cache_key = f"top_rated_{limit}"
+        cached_result = get_cached_response(cache_key)
+        if cached_result is not None:
+            headers = {"Cache-Control": "public, max-age=60"}
+            return JSONResponse(content=cached_result, headers=headers)
+        
+        logger.info("Fetching top rated courses")
         
         if courses_df is None or courses_df.empty:
             logger.error("No course data available")
@@ -823,7 +866,12 @@ async def get_top_rated_courses(
             results.append(formatted_course)
         
         logger.info(f"Found {len(results)} top-rated courses")
-        return JSONResponse(content=results)
+        
+        # Cache the results
+        set_cached_response(cache_key, results)
+        
+        headers = {"Cache-Control": "public, max-age=60"}
+        return JSONResponse(content=results, headers=headers)
         
     except Exception as e:
         logger.exception(f"Error in /top-rated endpoint: {e}")

@@ -492,7 +492,7 @@ async function getRecommendations(movieId) {
 // ===========================================
 
 // Generic JSON fetch with retry and exponential backoff (helps with Render cold starts)
-async function fetchJSONWithRetry(url, options = {}, retries = 2, backoffMs = 800) {
+async function fetchJSONWithRetry(url, options = {}, retries = 2, backoffMs = 500) {
     let attempt = 0;
     let lastErr = null;
     while (attempt <= retries) {
@@ -510,7 +510,7 @@ async function fetchJSONWithRetry(url, options = {}, retries = 2, backoffMs = 80
         } catch (err) {
             lastErr = err;
             if (attempt === retries) break;
-            await new Promise(r => setTimeout(r, backoffMs * Math.pow(2, attempt)));
+            await new Promise(r => setTimeout(r, backoffMs * Math.pow(1.5, attempt)));
             attempt += 1;
         }
     }
@@ -609,7 +609,7 @@ function populateLanguageFilter() { /* filters removed */ }
 // ===========================================
 function createCourseCard(course, showTrendingNumber = false, trendingIndex = 0) {
     const isInWatchlist = watchlist.some(item => item.id === course.id);
-    const shouldEagerLoad = trendingIndex < 4;
+    const shouldEagerLoad = trendingIndex < 2;
     
     // Get instructor names
     const instructors = course.visible_instructors || [];
@@ -1412,15 +1412,21 @@ const searchMovies = searchCourses;
 
 async function loadInitialData() {
     try {
+        // Show loading toast after 2 seconds to indicate server wake-up
+        const loadingToastTimer = setTimeout(() => {
+            showToast('Waking up the server... Please wait a moment.', 'warning');
+        }, 2000);
+
         // Small delay to allow Render to wake up on first visit
-        const warmup = fetchJSONWithRetry(`${config.BACKEND_BASE_URL}/trending?limit=1`, {}, 1, 600);
-        await Promise.race([warmup, new Promise(r => setTimeout(r, 700))]);
+        const warmup = fetchJSONWithRetry(`${config.BACKEND_BASE_URL}/trending?limit=1`, {}, 1, 400);
+        await Promise.race([warmup, new Promise(r => setTimeout(r, 500))]);
 
         const [trending, topRated] = await Promise.all([
-            fetchJSONWithRetry(`${config.BACKEND_BASE_URL}/trending?limit=12`, {}, 2, 800),
-            fetchJSONWithRetry(`${config.BACKEND_BASE_URL}/top-rated?limit=12`, {}, 2, 800),
+            fetchJSONWithRetry(`${config.BACKEND_BASE_URL}/trending?limit=12`, {}, 2, 600),
+            fetchJSONWithRetry(`${config.BACKEND_BASE_URL}/top-rated?limit=12`, {}, 2, 600),
         ]);
 
+        clearTimeout(loadingToastTimer);
         displayCourses(trending || [], 'trending-movies', true);
         displayCourses(topRated || [], 'toprated-movies');
 

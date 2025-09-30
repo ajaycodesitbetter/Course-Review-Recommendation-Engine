@@ -1,0 +1,130 @@
+{
+  "product_requirements": {
+    "project_name": "CourseScout",
+    "description": "AI-Powered Course Recommendation System with 98K+ courses from Udemy",
+    "version": "1.0.0",
+    "author": "Ajay Mathuriya",
+    "institution": "Minor in AI from IIT Ropar",
+    "requirements": [
+      {
+        "id": "REQ_001",
+        "title": "Course Search API",
+        "description": "Users should be able to search across 98,104+ courses with fuzzy matching and intelligent scoring",
+        "priority": "high",
+        "acceptance_criteria": [
+          "Search should return relevant courses based on title, category, description, and instructor",
+          "Search results should be ranked by relevance score",
+          "Search should handle typos and partial matches",
+          "API should return results in under 2 seconds",
+          "Maximum 12 courses returned per search"
+        ]
+      },
+      {
+        "id": "REQ_002", 
+        "title": "AI Course Recommendations",
+        "description": "System should provide ML-based course recommendations using TF-IDF and cosine similarity",
+        "priority": "high",
+        "acceptance_criteria": [
+          "Recommendations based on course similarity using 5000-dimension vectors",
+          "Should provide 10 similar courses for any given course ID",
+          "Fallback to category-based recommendations if ML model fails",
+          "Recommendations should be relevant and diverse"
+        ]
+      },
+      {
+        "id": "REQ_003",
+        "title": "Trending Courses",
+        "description": "Display trending courses based on subscriber count",
+        "priority": "medium",
+        "acceptance_criteria": [
+          "Sort courses by number of subscribers (descending)",
+          "Return top 10 trending courses",
+          "Include course metadata (title, rating, price, instructor)",
+          "Update trending list dynamically"
+        ]
+      },
+      {
+        "id": "REQ_004",
+        "title": "Top Rated Courses",
+        "description": "Show highest rated courses with quality filters",
+        "priority": "medium", 
+        "acceptance_criteria": [
+          "Filter courses with rating >= 4.0 and reviews >= 10",
+          "Sort by rating (descending)",
+          "Return top 10 rated courses",
+          "Fallback to all courses if not enough high-rated ones"
+        ]
+      },
+      {
+        "id": "REQ_005",
+        "title": "Frontend Course Browser",
+        "description": "Interactive web interface for course discovery",
+        "priority": "high",
+        "acceptance_criteria": [
+          "Responsive design working on desktop and mobile",
+          "Search with live suggestions",
+          "Horizontal scrolling course carousels",
+          "Course detail modals with recommendations",
+          "Watchlist functionality with local storage",
+          "User profile and preferences management"
+        ]
+      },
+      {
+        "id": "REQ_006",
+        "title": "Static Asset Serving",
+        "description": "Serve frontend assets and media files efficiently",
+        "priority": "medium",
+        "acceptance_criteria": [
+          "Serve HTML, CSS, JS files with proper MIME types",
+          "Handle asset requests with appropriate caching headers",
+          "Serve course images with fallback for missing images",
+          "All static routes should respond in under 100ms"
+        ]
+      },
+      {
+        "id": "REQ_007",
+        "title": "API Health and Status",
+        "description": "Provide system health and status endpoints",
+        "priority": "low",
+        "acceptance_criteria": [
+          "Health check endpoint returns system status",
+          "Model status endpoint shows AI/ML system readiness", 
+          "Include configuration and data loading status",
+          "Response time under 50ms"
+        ]
+      },
+      {
+        "id": "REQ_008",
+        "title": "Personalized Recommendations",
+        "description": "Optional Udemy API integration for personalized course suggestions",
+        "priority": "low",
+        "acceptance_criteria": [
+          "Integration with Udemy API for real-time data",
+          "User preference-based filtering (mood, language, budget)",
+          "Fallback to local recommendations if API fails",
+          "Respect rate limits and handle API errors gracefully"
+        ]
+      }
+    ],
+    "technical_specifications": {
+      "backend": {
+        "framework": "FastAPI",
+        "language": "Python 3.9+",
+        "database": "Pandas DataFrames (98K courses)",
+        "ml_model": "TF-IDF with cosine similarity",
+        "api_documentation": "OpenAPI 3.0 (Swagger)"
+      },
+      "frontend": {
+        "framework": "Vanilla JavaScript ES6+",
+        "styling": "Tailwind CSS",
+        "icons": "Lucide Icons",
+        "build_process": "None (CDN-based)"
+      },
+      "deployment": {
+        "server": "Uvicorn ASGI server",
+        "port": "8000",
+        "static_files": "FastAPI StaticFiles mount"
+      }
+    }
+  }
+}

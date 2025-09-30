@@ -1,0 +1,50 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "main.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api",
+      "dest": "main.py"
+    },
+    {
+      "src": "/search",
+      "dest": "main.py"
+    },
+    {
+      "src": "/trending",
+      "dest": "main.py"
+    },
+    {
+      "src": "/top-rated",
+      "dest": "main.py"
+    },
+    {
+      "src": "/recommendations",
+      "dest": "main.py"
+    },
+    {
+      "src": "/recommendations/user",
+      "dest": "main.py"
+    },
+    {
+      "src": "/categories",
+      "dest": "main.py"
+    },
+    {
+      "src": "/model/status",
+      "dest": "main.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "main.py"
+    }
+  ],
+  "env": {
+    "PYTHON_VERSION": "3.9"
+  }
+}

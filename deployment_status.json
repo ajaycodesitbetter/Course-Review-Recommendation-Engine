@@ -1,0 +1,11 @@
+{
+  "timestamp": "2025-09-29T13:27:26.882851",
+  "base_url": "https://coursescout.vercel.app",
+  "tests": {
+    "health": {
+      "status": "fail",
+      "error": "HTTP 404"
+    }
+  },
+  "overall_status": "failed"
+}

@@ -1,0 +1,118 @@
+{
+  "id": "coursescout-backend-tests",
+  "title": "CourseScout Backend API Tests",
+  "description": "Comprehensive testing of CourseScout AI-powered course recommendation system APIs",
+  "test_plan": {
+    "project_name": "CourseScout",
+    "project_path": "C:\\Users\\AjayM.AJAYS_DEVICE\\CourseMate",
+    "base_url": "http://localhost:8000",
+    "tests": [
+      {
+        "test_id": "api_health_check",
+        "test_name": "API Health Check",
+        "endpoint": "/api",
+        "method": "GET",
+        "description": "Test if the API is running and healthy",
+        "expected_status": 200,
+        "expected_response": {
+          "message": "CourseScout API is running!",
+          "status": "healthy"
+        }
+      },
+      {
+        "test_id": "course_search_functionality",
+        "test_name": "Course Search API",
+        "endpoint": "/search",
+        "method": "GET",
+        "description": "Test course search with various queries",
+        "test_cases": [
+          {
+            "name": "Search for Python courses",
+            "params": {"query": "python"},
+            "expected_status": 200,
+            "validate": "response should contain courses with 'python' in title or description"
+          },
+          {
+            "name": "Search for Machine Learning courses",
+            "params": {"query": "machine learning"},
+            "expected_status": 200,
+            "validate": "response should return relevant ML courses"
+          },
+          {
+            "name": "Empty search query",
+            "params": {"query": ""},
+            "expected_status": 400,
+            "validate": "should handle empty query gracefully"
+          }
+        ]
+      },
+      {
+        "test_id": "trending_courses_api",
+        "test_name": "Trending Courses API",
+        "endpoint": "/trending",
+        "method": "GET",
+        "description": "Test trending courses endpoint",
+        "expected_status": 200,
+        "validate": "should return courses sorted by subscriber count"
+      },
+      {
+        "test_id": "top_rated_courses_api",
+        "test_name": "Top Rated Courses API",
+        "endpoint": "/top-rated",
+        "method": "GET",
+        "description": "Test top rated courses endpoint",
+        "expected_status": 200,
+        "validate": "should return courses with high ratings"
+      },
+      {
+        "test_id": "course_recommendations_api",
+        "test_name": "Course Recommendations API",
+        "endpoint": "/recommendations",
+        "method": "GET",
+        "description": "Test AI-powered course recommendations",
+        "test_cases": [
+          {
+            "name": "Valid course ID recommendation",
+            "params": {"course_id": 567828},
+            "expected_status": 200,
+            "validate": "should return similar courses"
+          },
+          {
+            "name": "Invalid course ID",
+            "params": {"course_id": 999999999},
+            "expected_status": 200,
+            "validate": "should handle invalid IDs gracefully"
+          }
+        ]
+      },
+      {
+        "test_id": "static_files_serving",
+        "test_name": "Static Files Serving",
+        "description": "Test if frontend assets are served correctly",
+        "test_cases": [
+          {
+            "name": "Main frontend page",
+            "endpoint": "/",
+            "method": "GET",
+            "expected_status": 200,
+            "validate": "should serve index.html"
+          },
+          {
+            "name": "CSS styles",
+            "endpoint": "/style.css",
+            "method": "GET",
+            "expected_status": 200,
+            "validate": "should serve CSS file"
+          },
+          {
+            "name": "JavaScript application",
+            "endpoint": "/main.js",
+            "method": "GET",
+            "expected_status": 200,
+            "validate": "should serve JS file"
+          }
+        ]
+      }
+    ]
+  }
+}

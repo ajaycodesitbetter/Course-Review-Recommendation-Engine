@@ -1,0 +1,222 @@
+{
+  "tech_stack": [
+    "Python",
+    "FastAPI",
+    "JavaScript (ES6+)",
+    "HTML5",
+    "CSS3",
+    "Tailwind CSS",
+    "pandas",
+    "numpy", 
+    "scikit-learn",
+    "aiohttp",
+    "Uvicorn",
+    "SQLite (implicit via pandas)",
+    "TF-IDF ML model",
+    "Cosine Similarity"
+  ],
+  "features": [
+    {
+      "name": "Course Search API",
+      "description": "Search across 98K+ courses with fuzzy matching and scoring",
+      "files": ["main.py"],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "paths": {
+          "/search": {
+            "get": {
+              "summary": "Search courses",
+              "parameters": [
+                {
+                  "name": "query",
+                  "in": "query", 
+                  "required": true,
+                  "schema": {"type": "string"}
+                }
+              ],
+              "responses": {
+                "200": {
+                  "description": "List of matching courses",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "array",
+                        "items": {"$ref": "#/components/schemas/CourseOut"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "AI Course Recommendations",
+      "description": "ML-based course recommendations using TF-IDF and cosine similarity",
+      "files": ["main.py"],
+      "api_doc": {
+        "openapi": "3.0.0", 
+        "paths": {
+          "/recommendations": {
+            "get": {
+              "summary": "Get course recommendations",
+              "parameters": [
+                {
+                  "name": "course_id",
+                  "in": "query",
+                  "required": true,
+                  "schema": {"type": "integer"}
+                }
+              ],
+              "responses": {
+                "200": {
+                  "description": "List of recommended courses"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Trending Courses API", 
+      "description": "Get trending courses by subscriber count",
+      "files": ["main.py"],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "paths": {
+          "/trending": {
+            "get": {
+              "summary": "Get trending courses",
+              "responses": {
+                "200": {
+                  "description": "List of trending courses"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Top Rated Courses API",
+      "description": "Get highest rated courses with quality filters", 
+      "files": ["main.py"],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "paths": {
+          "/top-rated": {
+            "get": {
+              "summary": "Get top rated courses",
+              "responses": {
+                "200": {
+                  "description": "List of top rated courses"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Personalized User Recommendations",
+      "description": "Personalized course recommendations via Udemy API integration",
+      "files": ["main.py"], 
+      "api_doc": {
+        "openapi": "3.0.0",
+        "paths": {
+          "/recommendations/user": {
+            "post": {
+              "summary": "Get personalized recommendations",
+              "requestBody": {
+                "required": true,
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "mood": {"type": "string"},
+                        "language": {"type": "array", "items": {"type": "string"}},
+                        "liked_movies": {"type": "array"},
+                        "disliked_movies": {"type": "array"},
+                        "watchlist": {"type": "array"}
+                      }
+                    }
+                  }
+                }
+              },
+              "responses": {
+                "200": {
+                  "description": "Personalized course recommendations"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Frontend Course Browser",
+      "description": "Interactive course discovery interface with search, carousels, and user profiles",
+      "files": ["index.html", "main.js", "style.css", "config.js"],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "info": {
+          "title": "CourseScout Frontend",
+          "description": "Single-page application with course search, recommendations, watchlist, and user profiles"
+        }
+      }
+    },
+    {
+      "name": "Static Asset Server",
+      "description": "Serves frontend assets and media files",
+      "files": ["main.py"],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "paths": {
+          "/": {
+            "get": {
+              "summary": "Serve main application"
+            }
+          },
+          "/style.css": {
+            "get": {
+              "summary": "Serve CSS styles"
+            }
+          },
+          "/main.js": {
+            "get": {
+              "summary": "Serve JavaScript application"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Configuration Management",
+      "description": "Environment-based configuration system for API keys and settings",
+      "files": ["config.py", "config.js"],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "info": {
+          "title": "Configuration System",
+          "description": "Manages application settings, API keys, and environment variables"
+        }
+      }
+    },
+    {
+      "name": "Data Processing Pipeline",
+      "description": "Processes raw course data and generates ML embeddings",
+      "files": ["process_data.py"],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "info": {
+          "title": "Data Pipeline",
+          "description": "Transforms raw CSV data into optimized formats with ML features"
+        }
+      }
+    }
+  ]
+}
