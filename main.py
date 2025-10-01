@@ -143,7 +143,10 @@ async def get_coursemate_icon():
 
 @app.get("/assets/{filename}")
 async def get_asset(filename: str):
-    return FileResponse(f"assets/{filename}")
+    file_path = f"assets/{filename}"
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail=f"Asset {filename} not found")
+    return FileResponse(file_path)
 
 # Add GZip compression for better performance
 app.add_middleware(GZipMiddleware, minimum_size=1000)

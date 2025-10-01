@@ -1,0 +1,447 @@
+[
+  {
+    "id": "TC001",
+    "title": "Health Check API Returns 200 and Valid Status",
+    "description": "Verify that the /api health check endpoint returns HTTP 200 status and the expected JSON response structure.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send a GET request to /api health check endpoint"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the response status code is 200"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the JSON response includes keys: status, message, created_by"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the status value indicates API is operational"
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "Course Search API Returns Relevant Results Within 2 Seconds",
+    "description": "Test that the /search endpoint returns up to 12 relevant courses for valid queries and completes within performance criteria.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send a GET request to /search with a valid keyword query"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the response status code is 200"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response contains an array with up to 12 course objects"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify each course contains expected fields like id, title, visible_instructors, and avg_rating"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the response time is less than 2 seconds"
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "Course Search Handles Fuzzy Matching and Typo Tolerance",
+    "description": "Ensure that the course search supports fuzzy matching by returning relevant results despite minor typos or partial keywords.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send a GET request to /search with a query containing a common typo"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response status is 200"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify relevant courses related to intended query are included in results"
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "Course Recommendations API Returns Up to 10 Similar Courses by Default",
+    "description": "Validate that the /recommendations endpoint returns up to 10 relevant course recommendations based on a valid course ID using AI vector similarity.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send GET request to /recommendations with a valid course_id and no limit parameter"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response status code is 200"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the response contains an array with up to 10 courses recommended"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify each recommended course has fields id, title, visible_instructors, image, price, is_paid, avg_rating"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify recommendations are distinct from the base course and contextually relevant"
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Course Recommendations Honours Custom Limit Parameter",
+    "description": "Check that /recommendations endpoint respects the 'limit' query parameter between 1 and 50 and returns the appropriate number of recommendations.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send GET request to /recommendations with a valid course_id and limit=5"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response status is 200"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the response contains exactly 5 recommended courses"
+      },
+      {
+        "type": "action",
+        "description": "Send GET request to /recommendations with limit=50"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify up to 50 recommendations returned without error"
+      },
+      {
+        "type": "action",
+        "description": "Send GET request to /recommendations with limit=0 (invalid)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response returns appropriate error or default limit applied"
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "Trending Courses API Returns Sorted Results with Caching",
+    "description": "Test that the /trending endpoint returns courses sorted by descending num_subscribers with proper cache headers and respects limit constraints.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send GET request to /trending without limit parameter"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response status is 200"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the response contains up to 10 trending courses sorted by num_subscribers descending"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify cache headers like Cache-Control or ETag are present"
+      },
+      {
+        "type": "action",
+        "description": "Send GET request to /trending with limit=20"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response returns up to 20 courses respecting the limit"
+      },
+      {
+        "type": "action",
+        "description": "Send GET request to /trending with limit=51 (above max)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response enforces max limit of 50 or returns a validation error"
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "Top Rated Courses API Returns Sorted Results With Minimum Review Threshold and Caching",
+    "description": "Verify /top-rated endpoint returns courses sorted by rating and filtered by minimum number of reviews with valid cache headers.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send GET request to /top-rated without limit parameter"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response status code is 200"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify returned courses are sorted by rating descending and have num_reviews above threshold"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify cache headers are set"
+      },
+      {
+        "type": "action",
+        "description": "Send GET request to /top-rated with limit=15"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response returns up to 15 courses"
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "Course Categories API Returns All Categories Correctly",
+    "description": "Test that the /categories endpoint returns a complete list of available course categories including id, name, and icon fields.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send GET request to /categories endpoint"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the response status is 200"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the response contains an array of category objects each with id, name, and icon"
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Frontend Loads and Renders Correctly with All Assets",
+    "description": "Verify that the frontend web application loads completely in supported browsers including all static assets such as HTML, CSS, JavaScript, and images without errors.",
+    "category": "ui",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open the CourseScout frontend URL in supported browser"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the page loads with no broken or missing assets"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify horizontal scrolling carousels display correctly"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify course images are visible or fallback images appear if originals are unavailable"
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "Search UI Interaction Works Seamlessly Without Page Reload",
+    "description": "Test that performing a course search from the frontend updates results dynamically without full page reload and displays relevant courses.",
+    "category": "ui",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Enter a search term in the frontend search input and submit"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the UI updates to show search results dynamically"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify no full page reload is triggered"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify search results are relevant and load promptly"
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "Course Detail Modal Shows Complete Information",
+    "description": "Verify that selecting a course opens a modal displaying all important details including title, instructor info, description, rating, price, and image.",
+    "category": "ui",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Select a course item from the search or browsing results on frontend"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a modal appears with course details"
+      },
+      {
+        "type": "assertion",
+        "description": "Check presence of title, instructor names, description, price, rating, and course image"
+      }
+    ]
+  },
+  {
+    "id": "TC012",
+    "title": "Watchlist Functionality Adds and Removes Courses Correctly",
+    "description": "Test frontend watchlist allows users to add and remove courses with UI reflecting changes without page reloads.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Add a course to the watchlist from course detail modal"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify UI indicates course was added to watchlist"
+      },
+      {
+        "type": "action",
+        "description": "Remove the course from the watchlist"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify UI updates to reflect removal without error"
+      }
+    ]
+  },
+  {
+    "id": "TC013",
+    "title": "User Profile Preferences Accessible and Save Successfully",
+    "description": "Verify that accessing and updating user profile preferences via the frontend works correctly with persistent changes.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to user profile preferences section"
+      },
+      {
+        "type": "action",
+        "description": "Modify preference settings such as default course filters"
+      },
+      {
+        "type": "action",
+        "description": "Save the changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify changes are saved and reflected in subsequent sessions"
+      }
+    ]
+  },
+  {
+    "id": "TC014",
+    "title": "API Returns Appropriate Error for Invalid or Missing Parameters",
+    "description": "Test that API endpoints return meaningful error messages and HTTP status codes for invalid or missing required parameters.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send GET request to /search with missing 'query' parameter"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response status code is 400 Bad Request with relevant error message"
+      },
+      {
+        "type": "action",
+        "description": "Send GET request to /recommendations with invalid course_id format"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response status code is 400 or 422 with error details"
+      }
+    ]
+  },
+  {
+    "id": "TC015",
+    "title": "Static Assets Handle Missing Files with Fallback Images",
+    "description": "Verify that course images display fallback images when original images are missing or unavailable ensuring seamless user experience.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Access course detail page or carousel with a course that has a missing image URL"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the fallback image is displayed without broken image icon"
+      }
+    ]
+  },
+  {
+    "id": "TC016",
+    "title": "Trending and Top Rated APIs Respect Result Limits and Sorting",
+    "description": "Verify that both /trending and /top-rated endpoints strictly respect the limits parameter and results are correctly sorted by popularity or rating respectively.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send GET request to /trending with various limit values (1, 25, 50)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response array length matches limit and results are sorted descending by num_subscribers"
+      },
+      {
+        "type": "action",
+        "description": "Send GET request to /top-rated with limits 1, 25, and 50"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify results sorted by rating descending and filtered by minimum num_reviews"
+      }
+    ]
+  },
+  {
+    "id": "TC017",
+    "title": "No Broken Links or Missing Static Assets on Deployed Service",
+    "description": "Perform an end-to-end scan on deployed service to verify that no broken links or missing static assets are present anywhere on the platform.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Use automated tooling or manual browsing to crawl the frontend site and API endpoints"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify no broken links or missing assets are found"
+      },
+      {
+        "type": "assertion",
+        "description": "Check for HTTP 404 or 500 errors on any resources or links"
+      }
+    ]
+  }
+]
