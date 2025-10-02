@@ -113,6 +113,7 @@ app = FastAPI(title="CourseScout API", description="AI-Powered Course Recommenda
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="."), name="static")
+app.mount("/dist", StaticFiles(directory="dist"), name="dist")
 
 # Serve individual static files
 from fastapi.responses import FileResponse
